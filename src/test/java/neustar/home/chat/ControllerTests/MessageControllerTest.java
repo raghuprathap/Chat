@@ -1,6 +1,7 @@
 package neustar.home.chat.ControllerTests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import neustar.home.chat.controller.MessageController;
 import neustar.home.chat.controller.UserController;
 import neustar.home.chat.model.CustomResponse;
 import neustar.home.chat.model.Messages;
@@ -53,10 +54,13 @@ public class MessageControllerTest {
     @InjectMocks
     private UserController userController = new UserController();
 
+    @InjectMocks
+    private MessageController messageController;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(messageController).build();
         CustomResponse response = new CustomResponse();
         response.setMessage("User has been created.");
         response.setStatus("SUCCESS");
@@ -65,21 +69,24 @@ public class MessageControllerTest {
 
     @Test
     public void createMessageTest() throws Exception {
-        messages = new Messages();
-        messages.setTimestamp(LocalDateTime.now());
+        Messages messages = new Messages();
+       // messages.setTimestamp(LocalDateTime.now());
         messages.setMessage("HI this is for testing");
         Optional<User> user1= Optional.of(new User());
         when(messageReposiroty.save(messages)).thenReturn(messages);
         when(userRepository.findById(anyInt())).thenReturn(user1);
-        mockMvc.perform(post("/messages/").param("user_id", "3").contentType(MediaType.APPLICATION_JSON).content(jsonToString(messages)))
-                .andExpect(status().isNotFound()).andDo(print());
+        mockMvc.perform(post("/message/{user_id}", 3)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(jsonToString(messages)))
+                .andExpect(status().isCreated()).andDo(print());
     }
 
     @Test
     public void getAllMessagesByUserIdTest() throws Exception {
         List<Messages> list1 = new ArrayList<Messages>();
         when(messageReposiroty.findByUserId(anyInt(), anyInt())).thenReturn(list1);
-        mockMvc.perform(get("/messages").param("count","3").param("user_id","7")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/messages?count=3&user_id=7")).andExpect(status().isOk());
+        // .param("count","3").param("user_id","7")
     }
 
     // Parsing String format data into JSON format
